@@ -42,6 +42,9 @@
 // target_config.h provides GLOBAL_CONFIGDATA object for CFE runtime settings
 #include <target_config.h>
 
+#include <os-shared-globaldefs.h>
+
+
 // PSP needs to call the CFE entry point
 #define CFE_PSP_MAIN_FUNCTION (*GLOBAL_CONFIGDATA.CfeConfig->SystemMain)
 
@@ -57,22 +60,7 @@ int CFE_PSP_Setup(void)
 
 void CFE_PSP_Panic(int32 ErrorCode)
 {
-    #if defined(__unix__)
-    #elif defined(__arm__)
-    //__asm("bkpt 1");
-    #else
-    #error
-    #endif
-
-    // #if (sizeof(long) == sizeof(int32))
     OS_printf("CFE PSP Panic. ErrorCode:%ld .\n", (long int)ErrorCode);
-    // #elif (sizeof(int) == sizeof(int32))
-    // OS_printf("CFE PSP Panic. ErrorCode:%d .\n", ErrorCode);
-    // #else
-    // #error
-    // #endif
-
-    // vTaskEndScheduler();
     OS_ApplicationExit(ErrorCode);
 }
 
@@ -82,6 +70,7 @@ void OS_Application_Startup(void)
     int32 Status;
     uint32 reset_type;
     uint32 reset_subtype;
+    //osal_id_t    fs_id;
 
     /*
     ** Initialize the OS API data structures
@@ -101,11 +90,97 @@ void OS_Application_Startup(void)
     */
     CFE_PSP_SetupReservedMemoryMap();
 
+    /* At current implementatiom this platform does not support fixed file systems.
+     * 
+     * Our previous implementation used FAT filesystem for RAMDISK, planning in a
+     * commom driver layer for both SDcard and RAMDISK.
+     * 
+     * Aiming in implementation of fixed file systems in on-chip Flash, we also
+     * integrated Xilinx MFS, which can use both ROM and RAM.
+     *
+     */
+    // @TODO USe OS_FileSysAddFixedMap() to initialize ROM, Flash or SDcard filesystem supporting CFE_PSP_NONVOL_STARTUP_FILE.
+    //
+    // FIXED filesystem:
+    // - OS_FileSysAddFixedMap()
+    //   calls OS_FileSysStartVolume_Impl(), no format, then
+    //   calls OS_FileSysMountVolume_Impl()
+    // RAM/VIRTUAL filesystem:
+    // - OS_initfs()/OS_mkfs()/OS_FileSys_Initialize()
+    //   calls OS_FileSysStartVolume_Impl() and OS_FileSysFormatVolume_Impl() only
+    // - Requires explicit call to OS_mount()
+    //
+    // Volatile filesystem is initialized/formatted from within cFE ES using device name /ramdev0. It is done using
+    // OS_initfs() or OS_mkfs(), and then OS_mount("/ramdev0", CFE_PLATFORM_ES_RAM_DISK_MOUNT_STRING).
+    // OS_mount() does not operate on filesystems marked as FIXED
+    // OS_initfs() and OS_mkfs() operates on filesystems not marked as FIXED
+    // OS_initfs() or OS_mkfs() are precondition to OS_mount().
+    // If successful, OS_mount() marks the filesys as mounted and VIRTUAL.
+    // Linkage from device to filesystem is done by OS_FileSysMountVolume_Impl()
+    // Both OS_initfs() and OS_mkfs() rely on OS_FileSys_Initialize(), the difference 
+    // being only that init should not format if init failed, while OS_mkfs() should format on failure to init.
+    // OS_FileSys_Initialize() relies on OS_FileSysStartVolume_Impl() and, on fail to start and should format, 
+    // calls OS_FileSysFormatVolume_Impl()
+
+    /*
+    ** Set up a small RAM filesystem with cFE start-up script content initialized
+    ** from embedded file. See also <cpuname>_EMBED_FILELIST in targets.cmake.
+    */
+
+    // TODO replace this with OS_FileSysAddFixedMap()
+    osal_id_t FileStartupScript;
+    extern const unsigned char STARTUP_SCR_DATA[];          // Embedded by <cpuname>_EMBED_FILELIST in targets.cmake
+    extern const unsigned long STARTUP_SCR_SIZE;
+    #define FREERTOS_RAMDISK_SECTOR_SIZE 128                // must be 512 for FreeRTOS+FAT RAMDISK
+    #define ES_STARTUP_BLOCKS            26                 // minium 128 for FreeRTOS+FAT RAMDISK
+    #define ES_STARTUP_VOL_LABEL         "RAM1"             // Must start with /RAM if RAMDISK, see also OS_FILESYS_RAMDISK_VOLNAME_PREFIX
+    #define ES_STARTUP_DEVICE            "/ramdev1"
+    #define ES_STARTUP_MOUNT             "/cf"              // Same prefix as CFE_PLATFORM_ES_NONVOL_STARTUP_FILE
+
+    /* Make the file system */
+    Status = OS_mkfs( 0,   // NULL as RAMDISK address implies dynamic allocation
+        ES_STARTUP_DEVICE, 
+        ES_STARTUP_VOL_LABEL, 
+        OSAL_SIZE_C(FREERTOS_RAMDISK_SECTOR_SIZE), 
+        OSAL_BLOCKCOUNT_C(ES_STARTUP_BLOCKS) );
+    if (Status != OS_SUCCESS)
+    {
+        OS_printf("CFE_PSP: OS_mkfs() failed.\n");
+        CFE_PSP_Panic(Status);
+    }
+
+    Status = OS_mount(ES_STARTUP_DEVICE, ES_STARTUP_MOUNT);
+    if (Status != OS_SUCCESS)
+    {
+        OS_printf("CFE_PSP: OS_mount() failed.\n");
+        CFE_PSP_Panic(Status);
+    }
+
+    Status = OS_OpenCreate(&FileStartupScript, CFE_PSP_NONVOL_STARTUP_FILE, OS_FILE_FLAG_CREATE, OS_WRITE_ONLY);
+    if (Status != OS_SUCCESS)
+    {
+        OS_printf("CFE_PSP: OS_OpenCreate() failure\n");
+        CFE_PSP_Panic(Status);
+    }
+    Status = OS_write(FileStartupScript, STARTUP_SCR_DATA, STARTUP_SCR_SIZE);
+    if (Status != STARTUP_SCR_SIZE)
+    {
+        OS_printf("CFE_PSP: OS_write() failure\n");
+        CFE_PSP_Panic(Status);
+    }
+    Status = OS_close(FileStartupScript);
+    if (Status != OS_SUCCESS)
+    {
+        OS_printf("CFE_PSP: OS_close() failure\n");
+        CFE_PSP_Panic(Status);
+    }
+
+
+
     /*
     ** Initialize the statically linked modules (if any)
     */
     CFE_PSP_ModuleInit();
-
 
     if(CFE_PSP_Setup() != CFE_PSP_SUCCESS){
         CFE_PSP_Panic(CFE_PSP_ERROR);
@@ -124,4 +199,5 @@ void OS_Application_Startup(void)
     ** is complete.
     */
     CFE_PSP_MAIN_FUNCTION(reset_type, reset_subtype, 1, CFE_PSP_NONVOL_STARTUP_FILE);
+
 }

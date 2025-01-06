@@ -15,10 +15,7 @@
 #include "target_config.h"
 #include "cfe_mission_cfg.h"
 #include "cfe_platform_cfg.h"
-//#include "cfe_es.h"
-//#include "cfe_time.h"
 #include "cfe_es_resetdata_typedef.h"
-//#include "cfe_es_global.h"
 
 // target_config.h provides GLOBAL_CONFIGDATA object for CFE runtime settings
 #include <target_config.h>
@@ -44,8 +41,8 @@ CFE_PSP_ReservedMemoryMap_t CFE_PSP_ReservedMemoryMap = { 0 };
 
 // allocate memory in a special memory region named ".psp_reserved" in linker script
 // @FIXME determine whether to place CDS, other regions in NVM or other memory
-__attribute__ ((section(".psp_reserved")))
-__attribute__ ((aligned (8)))
+//__attribute__ ((section(".noinit.psp_reserved")))
+//__attribute__ ((aligned (8)))
 char pspReservedMemoryAlloc[CFE_PSP_RESERVED_MEMORY_SIZE];
 
 
@@ -117,7 +114,8 @@ int32 CFE_PSP_InitProcessorReservedMemory(uint32 reset_type)
 
 // assign the pointers for these memory regions:
 // Boot Record, Exception Logging, Reset Reason, CDS, Volatile Disk, User Reserved
-void CFE_PSP_SetupReservedMemoryMap(void){
+void CFE_PSP_SetupReservedMemoryMap(void)
+{
     cpuaddr ReservedMemoryAddr;
 
     size_t BootRecordSize;
@@ -162,7 +160,6 @@ void CFE_PSP_SetupReservedMemoryMap(void){
     RequiredSize += CDSSize;
     RequiredSize += UserReservedSize;
 
-
     if((unsigned int) RequiredSize > CFE_PSP_RESERVED_MEMORY_SIZE){
         OS_DebugPrintf(1, __func__, __LINE__, "PSP required reserved memory = %u bytes\n", (unsigned int) RequiredSize);
         OS_DebugPrintf(1, __func__, __LINE__, "Not enough memory available for PSP CFE reserved sections.\n");
@@ -186,7 +183,8 @@ void CFE_PSP_SetupReservedMemoryMap(void){
         OS_DebugPrintf(1, __func__, __LINE__, "PSP required VolatileDiskSize memory = %u bytes\n", (unsigned int) VolatileDiskSize);
         OS_DebugPrintf(1, __func__, __LINE__, "PSP required CDSSize/CDS segment size memory = %u bytes\n", (unsigned int) CDSSize);
         OS_DebugPrintf(1, __func__, __LINE__, "PSP required UserReservedSize/User reserved area segment size memory = %u bytes\n", (unsigned int) UserReservedSize);
-
+        
+        CFE_PSP_Panic(CFE_PSP_PANIC_MEMORY_ALLOC);
         return;
     }
 

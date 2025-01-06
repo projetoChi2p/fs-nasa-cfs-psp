@@ -29,6 +29,8 @@
 
 #include "cfe_psp_module.h"
 
+#include <os-shared-globaldefs.h> // used for OS_DEBUG()
+
 /*
  * When using an OSAL that also supports "opaque object ids", choose values here
  * that will fit in with the OSAL object ID values and not overlap anything.
@@ -79,7 +81,7 @@ uint32_t CFE_PSP_ModuleInitList(uint32 BaseId, CFE_StaticModuleLoadEntry_t *List
             ModuleId = BaseId + ModuleCount;
             if ((uint32)ApiPtr->ModuleType != CFE_PSP_MODULE_TYPE_INVALID && ApiPtr->Init != NULL)
             {
-                printf("CFE_PSP: initializing module \'%s\' with ID %08lx\n", Entry->Name, (unsigned long)ModuleId);
+                OS_DEBUG("CFE_PSP: initializing module \'%s\' with ID %08lx\n", Entry->Name, (unsigned long)ModuleId);
                 (*ApiPtr->Init)(ModuleId);
             }
             ++Entry;

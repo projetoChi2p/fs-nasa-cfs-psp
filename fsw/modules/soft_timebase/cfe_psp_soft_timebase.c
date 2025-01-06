@@ -33,6 +33,8 @@
 #include "cfe_psp_module.h"
 #include "cfe_psp_config.h"
 
+#include <os-shared-globaldefs.h>
+
 CFE_PSP_MODULE_DECLARE_SIMPLE(soft_timebase);
 
 /*
@@ -60,12 +62,12 @@ void soft_timebase_Init(uint32 PspModuleId)
 
         }
         else {
-            printf("CFE_PSP: *** Failed to set trigger resolution for software timebase \'%s\', status = %d! ***\n",
+            OS_DEBUG("CFE_PSP: *** Failed to set trigger resolution for software timebase \'%s\', status = %d! ***\n",
                 CFE_PSP_SOFT_TIMEBASE_NAME, (int)status);
         }
     }
     else {
-        printf("CFE_PSP: *** Failed to create software timebase \'%s\', status = %d! ***\n",
+        OS_DEBUG("CFE_PSP: *** Failed to create software timebase \'%s\', status = %d! ***\n",
                CFE_PSP_SOFT_TIMEBASE_NAME, (int)status);
     }
 
@@ -79,13 +81,13 @@ void soft_timebase_Init(uint32 PspModuleId)
      */
     if (status != OS_SUCCESS)
     {
-        printf("CFE_PSP: *** Failed to configure software timebase \'%s\', status = %d! ***\n",
+        OS_DEBUG("CFE_PSP: *** Failed to configure software timebase \'%s\', status = %d! ***\n",
                CFE_PSP_SOFT_TIMEBASE_NAME, (int)status);
     }
     else
     {
         /* Inform the user that this module is in use */
-        printf("CFE_PSP: Instantiated software timebase \'%s\' running at %lu usec\n", CFE_PSP_SOFT_TIMEBASE_NAME,
+        OS_DEBUG("CFE_PSP: Instantiated software timebase \'%s\' running at %lu usec\n", CFE_PSP_SOFT_TIMEBASE_NAME,
                (unsigned long)CFE_PSP_SOFT_TIMEBASE_PERIOD);
     }
 }

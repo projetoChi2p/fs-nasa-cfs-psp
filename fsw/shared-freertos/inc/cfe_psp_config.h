@@ -2,10 +2,10 @@
 #define _cfe_psp_config_
 
 // FreeRTOS headers
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
-#include "freertos/queue.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+#include "queue.h"
 
 
 /*
@@ -29,7 +29,7 @@
 
 // Memory tables
 // cfe_psp_memory.c
-#define CFE_PSP_MEMALIGN_MASK ((cpuaddr) 0x40)  // ARM may be designed with 64 byte processor cache
+#define CFE_PSP_MEMALIGN_MASK ((cpuaddr) 0x3F)  // RISC-V and Arm may be designed with 64 byte processor cache line/block
 typedef struct
 {
     uint32 bsp_reset_type;

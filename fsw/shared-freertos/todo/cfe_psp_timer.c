@@ -6,17 +6,14 @@ uint32_t HLP_u32GetLoResTick(void);
 
 void CFE_PSP_GetTime(OS_time_t *time)
 {
-    uint32_t RawTicks;
+    uint32_t ticks;
+    int64 microsecs;
 
-    int64 seconds;
-    uint32 nanoseconds;
+    ticks = HLP_u32GetLoResTick();
 
-    RawTicks = HLP_u32GetLoResTick();
-    seconds = RawTicks / CFE_PSP_GetTimerTicksPerSecond();
-    RawTicks -= seconds*CFE_PSP_GetTimerTicksPerSecond();
-    nanoseconds = RawTicks * (1000000000/CFE_PSP_GetTimerTicksPerSecond());
+    microsecs = ( ticks * ((int64)1000*1000) ) / CFE_PSP_GetTimerTicksPerSecond();
 
-    *time = OS_TimeAssembleFromNanoseconds(seconds, nanoseconds);
+    *time = OS_TimeFromTotalMicroseconds(microsecs);
 }
 
 void CFE_PSP_Get_Timebase(uint32 *tbu, uint32 *tbl)

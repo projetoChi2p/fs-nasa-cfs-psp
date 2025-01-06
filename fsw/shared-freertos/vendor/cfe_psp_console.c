@@ -13,8 +13,8 @@
 
 #include "cfe_psp.h"
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
+#include <FreeRTOS.h>
+#include <semphr.h>
 
 
 // char debugBuffer[100];
