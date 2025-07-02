@@ -46,14 +46,6 @@ const char *CFE_PSP_GetProcessorName(void)
 
 
 void CFE_PSP_Restart(uint32 resetType){
-    // @FIXME not implemented
-     // #if (sizeof(long) == sizeof(int32))
-    OS_printf("CFE_PSP_Restart(%lu). Not implemented.\n", (long unsigned int)resetType);
-    // #elif (sizeof(int) == sizeof(int32))
-    // OS_printf("CFE_PSP_Restart(%u). Not implemented.\n", resetType);
-    // #else
-    // #error
-    // #endif
-
-    CFE_PSP_Panic(CFE_PSP_ERROR_NOT_IMPLEMENTED);    
+    // FIXME: treat the reset type
+    HLP_vSystemRestart();
 }

@@ -31,6 +31,7 @@
 ** \ingroup  freertos
 ** \author   Patrick Paul (https://github.com/pztrick)
 ** \author   Fabio Benevenuti (UFRGS)
+** \author   Luís França      (UFRGS)
 **/
 
 
@@ -44,6 +45,7 @@
 
 #include <os-shared-globaldefs.h>
 
+#include "mpfs_hal/mss_hal.h"
 
 // PSP needs to call the CFE entry point
 #define CFE_PSP_MAIN_FUNCTION (*GLOBAL_CONFIGDATA.CfeConfig->SystemMain)
@@ -70,6 +72,7 @@ void OS_Application_Startup(void)
     int32 Status;
     uint32 reset_type;
     uint32 reset_subtype;
+    uint32 reset_register;
     //osal_id_t    fs_id;
 
     /*
@@ -91,10 +94,10 @@ void OS_Application_Startup(void)
     CFE_PSP_SetupReservedMemoryMap();
 
     /* At current implementatiom this platform does not support fixed file systems.
-     * 
+     *
      * Our previous implementation used FAT filesystem for RAMDISK, planning in a
      * commom driver layer for both SDcard and RAMDISK.
-     * 
+     *
      * Aiming in implementation of fixed file systems in on-chip Flash, we also
      * integrated Xilinx MFS, which can use both ROM and RAM.
      *
@@ -117,9 +120,9 @@ void OS_Application_Startup(void)
     // OS_initfs() or OS_mkfs() are precondition to OS_mount().
     // If successful, OS_mount() marks the filesys as mounted and VIRTUAL.
     // Linkage from device to filesystem is done by OS_FileSysMountVolume_Impl()
-    // Both OS_initfs() and OS_mkfs() rely on OS_FileSys_Initialize(), the difference 
+    // Both OS_initfs() and OS_mkfs() rely on OS_FileSys_Initialize(), the difference
     // being only that init should not format if init failed, while OS_mkfs() should format on failure to init.
-    // OS_FileSys_Initialize() relies on OS_FileSysStartVolume_Impl() and, on fail to start and should format, 
+    // OS_FileSys_Initialize() relies on OS_FileSysStartVolume_Impl() and, on fail to start and should format,
     // calls OS_FileSysFormatVolume_Impl()
 
     /*
@@ -139,9 +142,9 @@ void OS_Application_Startup(void)
 
     /* Make the file system */
     Status = OS_mkfs( 0,   // NULL as RAMDISK address implies dynamic allocation
-        ES_STARTUP_DEVICE, 
-        ES_STARTUP_VOL_LABEL, 
-        OSAL_SIZE_C(FREERTOS_RAMDISK_SECTOR_SIZE), 
+        ES_STARTUP_DEVICE,
+        ES_STARTUP_VOL_LABEL,
+        OSAL_SIZE_C(FREERTOS_RAMDISK_SECTOR_SIZE),
         OSAL_BLOCKCOUNT_C(ES_STARTUP_BLOCKS) );
     if (Status != OS_SUCCESS)
     {
@@ -175,8 +178,6 @@ void OS_Application_Startup(void)
         CFE_PSP_Panic(Status);
     }
 
-
-
     /*
     ** Initialize the statically linked modules (if any)
     */
@@ -186,9 +187,46 @@ void OS_Application_Startup(void)
         CFE_PSP_Panic(CFE_PSP_ERROR);
     }
 
-    // @FIXME should try to read reset_type from NVM BootPtr
-    reset_type = CFE_PSP_RST_TYPE_POWERON;
-    reset_subtype = CFE_PSP_RST_SUBTYPE_POWER_CYCLE;
+    /* Read the Reset Status Register */
+    reset_register = SYSREG->RESET_SR;
+    SYSREG->RESET_SR = 0;
+
+    if (reset_register & RESET_SR_SCB_PERIPH_RESET_MASK)
+    {
+        OS_printf("CFE_PSP: POWERON Reset: Power Cycle.\n");
+        reset_type = CFE_PSP_RST_TYPE_POWERON;
+        reset_subtype = CFE_PSP_RST_SUBTYPE_POWER_CYCLE;
+    }
+    else if (reset_register & RESET_SR_FABRIC_RESET_MASK)
+    {
+        OS_printf("CFE_PSP POWERON Reset: Fabric (Push button) reset.\n");
+        reset_type = CFE_PSP_RST_TYPE_POWERON;
+        reset_subtype = CFE_PSP_RST_SUBTYPE_PUSH_BUTTON;
+    }
+    else if (reset_register & RESET_SR_WDOG_RESET_MASK)
+    {
+        OS_printf("CFE_PSP PROCESSOR Reset: Watchdog reset.\n");
+        reset_type = CFE_PSP_RST_TYPE_PROCESSOR;
+        reset_subtype = CFE_PSP_RST_SUBTYPE_HW_WATCHDOG;
+    }
+    else if (reset_register & (0x01 << 0x8))
+    {
+        OS_printf("CFE_PSP PROCESSOR Reset: Software Reset.\n");
+        reset_type = CFE_PSP_RST_TYPE_PROCESSOR;
+        reset_subtype = CFE_PSP_RST_SUBTYPE_RESET_COMMAND;
+    }
+    else
+    {
+        OS_printf("CFE_PSP POWERON Reset: Undefined Reset.\n");
+        reset_type    = CFE_PSP_RST_TYPE_POWERON;
+        reset_subtype = CFE_PSP_RST_SUBTYPE_UNDEFINED_RESET;
+    }
+
+    if (reset_type == CFE_PSP_RST_TYPE_PROCESSOR)
+    {
+        CFE_PSP_ReservedMemoryMap.BootPtr->bsp_reset_type = CFE_PSP_RST_TYPE_POWERON;
+    }
+
     /*
     ** Initialize the reserved memory
     */
@@ -199,5 +237,4 @@ void OS_Application_Startup(void)
     ** is complete.
     */
     CFE_PSP_MAIN_FUNCTION(reset_type, reset_subtype, 1, CFE_PSP_NONVOL_STARTUP_FILE);
-
 }
