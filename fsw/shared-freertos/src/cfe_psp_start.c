@@ -45,7 +45,8 @@
 
 #include <os-shared-globaldefs.h>
 
-#include "mpfs_hal/mss_hal.h"
+// #include "mpfs_hal/mss_hal.h"
+#include "app_helpers.h"
 
 // PSP needs to call the CFE entry point
 #define CFE_PSP_MAIN_FUNCTION (*GLOBAL_CONFIGDATA.CfeConfig->SystemMain)
@@ -72,7 +73,7 @@ void OS_Application_Startup(void)
     int32 Status;
     uint32 reset_type;
     uint32 reset_subtype;
-    uint32 reset_register;
+    uint32 hlp_reset_type;
     //osal_id_t    fs_id;
 
     /*
@@ -187,32 +188,30 @@ void OS_Application_Startup(void)
         CFE_PSP_Panic(CFE_PSP_ERROR);
     }
 
-    /* Read the Reset Status Register */
-    reset_register = SYSREG->RESET_SR;
-    SYSREG->RESET_SR = 0;
+    reset_type = HLP_uGetResetType();
 
-    if (reset_register & RESET_SR_SCB_PERIPH_RESET_MASK)
+    if (hlp_reset_type == RESET_TYPE_POWERON)
     {
         OS_printf("CFE_PSP: POWERON Reset: Power Cycle.\n");
-        reset_type = CFE_PSP_RST_TYPE_POWERON;
+        reset_type    = CFE_PSP_RST_TYPE_POWERON;
         reset_subtype = CFE_PSP_RST_SUBTYPE_POWER_CYCLE;
     }
-    else if (reset_register & RESET_SR_FABRIC_RESET_MASK)
+    else if (hlp_reset_type == RESET_TYPE_EXTERNAL)
     {
         OS_printf("CFE_PSP POWERON Reset: Fabric (Push button) reset.\n");
-        reset_type = CFE_PSP_RST_TYPE_POWERON;
+        reset_type    = CFE_PSP_RST_TYPE_POWERON;
         reset_subtype = CFE_PSP_RST_SUBTYPE_PUSH_BUTTON;
     }
-    else if (reset_register & RESET_SR_WDOG_RESET_MASK)
+    else if (hlp_reset_type == RESET_TYPE_WATCHDOG)
     {
         OS_printf("CFE_PSP PROCESSOR Reset: Watchdog reset.\n");
-        reset_type = CFE_PSP_RST_TYPE_PROCESSOR;
+        reset_type    = CFE_PSP_RST_TYPE_PROCESSOR;
         reset_subtype = CFE_PSP_RST_SUBTYPE_HW_WATCHDOG;
     }
-    else if (reset_register & (0x01 << 0x8))
+    else if (hlp_reset_type == RESET_TYPE_SOFTWARE)
     {
         OS_printf("CFE_PSP PROCESSOR Reset: Software Reset.\n");
-        reset_type = CFE_PSP_RST_TYPE_PROCESSOR;
+        reset_type    = CFE_PSP_RST_TYPE_PROCESSOR;
         reset_subtype = CFE_PSP_RST_SUBTYPE_RESET_COMMAND;
     }
     else
