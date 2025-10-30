@@ -76,8 +76,6 @@ void OS_Application_Startup(void)
     uint32 hlp_reset_type;
     osal_id_t    fs_id;
 
-    FRESULT result;
-
     /*
     ** Initialize the OS API data structures
     */
@@ -133,8 +131,19 @@ void OS_Application_Startup(void)
     ** from embedded file. See also <cpuname>_EMBED_FILELIST in targets.cmake.
     */
 
-    // TODO replace this with OS_FileSysAddFixedMap()
-    /*
+    #ifdef OS_FILESYSTEM_NON_VOLATILE_IS_FATFS
+
+    Status = OS_FileSysAddFixedMap(&fs_id, "0:/cf", "/cf");
+    if (Status != OS_SUCCESS)
+    {
+        /* Print for informational purposes --
+        * startup can continue, but load the tables may fail later,
+        * depending on config. */
+        OS_printf("CFE_PSP: OS_FileSysAddFixedMap() failure: %d\n", (int)Status);
+    }
+
+    #else
+
     osal_id_t FileStartupScript;
     extern const unsigned char STARTUP_SCR_DATA[];          // Embedded by <cpuname>_EMBED_FILELIST in targets.cmake
     extern const unsigned long STARTUP_SCR_SIZE;
@@ -143,10 +152,8 @@ void OS_Application_Startup(void)
     #define ES_STARTUP_VOL_LABEL         "RAM1"             // Must start with /RAM if RAMDISK, see also OS_FILESYS_RAMDISK_VOLNAME_PREFIX
     #define ES_STARTUP_DEVICE            "/ramdev1"
     #define ES_STARTUP_MOUNT             "/cf"              // Same prefix as CFE_PLATFORM_ES_NONVOL_STARTUP_FILE
-    */
 
     /* Make the file system */
-    /*
     Status = OS_mkfs( 0,   // NULL as RAMDISK address implies dynamic allocation
         ES_STARTUP_DEVICE,
         ES_STARTUP_VOL_LABEL,
@@ -157,29 +164,41 @@ void OS_Application_Startup(void)
         OS_printf("CFE_PSP: OS_mkfs() failed.\n");
         CFE_PSP_Panic(Status);
     }
-    */
 
-   /*
-   Status = OS_mount(ES_STARTUP_DEVICE, ES_STARTUP_MOUNT);
-   if (Status != OS_SUCCESS)
-   {
-    OS_printf("CFE_PSP: OS_mount() failed.\n");
-    CFE_PSP_Panic(Status);
+    Status = OS_mount(ES_STARTUP_DEVICE, ES_STARTUP_MOUNT);
+    if (Status != OS_SUCCESS)
+    {
+        OS_printf("CFE_PSP: OS_mount() failed.\n");
+        CFE_PSP_Panic(Status);
     }
-    */
+
+    Status = OS_OpenCreate(&FileStartupScript, CFE_PSP_NONVOL_STARTUP_FILE, OS_FILE_FLAG_CREATE, OS_WRITE_ONLY);
+    if (Status != OS_SUCCESS)
+    {
+        OS_printf("CFE_PSP: OS_OpenCreate() failure\n");
+        CFE_PSP_Panic(Status);
+    }
+
+    Status = OS_write(FileStartupScript, STARTUP_SCR_DATA, STARTUP_SCR_SIZE);
+    if (Status != STARTUP_SCR_SIZE)
+    {
+        OS_printf("CFE_PSP: OS_write() failure\n");
+        CFE_PSP_Panic(Status);
+    }
+
+    Status = OS_close(FileStartupScript);
+    if (Status != OS_SUCCESS)
+    {
+        OS_printf("CFE_PSP: OS_close() failure\n");
+        CFE_PSP_Panic(Status);
+    }
+
+    #endif
 
    /*
    ** Initialize the statically linked modules (if any)
    */
 
-    Status = OS_FileSysAddFixedMap(&fs_id, "0:/cf", "/cf");
-    if (Status != OS_SUCCESS)
-    {
-        /* Print for informational purposes --
-        * startup can continue, but load the tables may fail later,
-        * depending on config. */
-        OS_printf("CFE_PSP: OS_FileSysAddFixedMap() failure: %d\n", (int)Status);
-    }
 
     CFE_PSP_ModuleInit();
 
