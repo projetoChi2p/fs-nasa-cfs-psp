@@ -39,7 +39,6 @@
 #include "cfe_psp_config.h"
 #include "cfe_psp_memory.h"
 #include "cfe_psp_module.h"
-#include "fatfs/ff.h"
 
 // target_config.h provides GLOBAL_CONFIGDATA object for CFE runtime settings
 #include <target_config.h>

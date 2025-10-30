@@ -15,7 +15,6 @@
 #include "target_config.h"
 #include "cfe_mission_cfg.h"
 #include "cfe_platform_cfg.h"
-#include "cfe_es_resetdata_typedef.h"
 
 // target_config.h provides GLOBAL_CONFIGDATA object for CFE runtime settings
 #include <target_config.h>
@@ -163,7 +162,7 @@ void CFE_PSP_SetupReservedMemoryMap(void)
         OS_DebugPrintf(1, __func__, __LINE__, "PSP required BootRecordSize memory = %u bytes\n", (unsigned int) BootRecordSize);
         OS_DebugPrintf(1, __func__, __LINE__, "PSP required ExcRecordSize memory = %u bytes\n", (unsigned int) ExcRecordSize);
         OS_DebugPrintf(1, __func__, __LINE__, "PSP required ResetSize/Reset area segment size memory = %u bytes\n", (unsigned int) ResetSize);
-        #if 1
+        #if 0
         {
             CFE_ES_ResetData_t x;
             OS_DebugPrintf(1, __func__, __LINE__, "    required CFE_ES_ResetData_t memory = %u bytes\n", (unsigned int) sizeof(x));
