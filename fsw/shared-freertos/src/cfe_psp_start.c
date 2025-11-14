@@ -31,7 +31,7 @@
 ** \ingroup  freertos
 ** \author   Patrick Paul (https://github.com/pztrick)
 ** \author   Fabio Benevenuti (UFRGS)
-** \author   Luís França      (UFRGS)
+** \author   Luis Franca      (UFRGS)
 **/
 
 
@@ -70,11 +70,11 @@ void CFE_PSP_Panic(int32 ErrorCode)
 // OSAL:main() invokes PSP:OS_Application_Startup() inside a FreeRTOS task
 void OS_Application_Startup(void)
 {
-    int32 Status;
-    uint32 reset_type;
-    uint32 reset_subtype;
-    uint32 hlp_reset_type;
-    osal_id_t    fs_id;
+    int32     Status;
+    uint32    reset_type;
+    uint32    reset_subtype;
+    uint32    bsp_reset_type;
+    osal_id_t fs_id;
 
     /*
     ** Initialize the OS API data structures
@@ -94,43 +94,6 @@ void OS_Application_Startup(void)
     */
     CFE_PSP_SetupReservedMemoryMap();
 
-    /* At current implementatiom this platform does not support fixed file systems.
-     *
-     * Our previous implementation used FAT filesystem for RAMDISK, planning in a
-     * commom driver layer for both SDcard and RAMDISK.
-     *
-     * Aiming in implementation of fixed file systems in on-chip Flash, we also
-     * integrated Xilinx MFS, which can use both ROM and RAM.
-     *
-     */
-    // @TODO USe OS_FileSysAddFixedMap() to initialize ROM, Flash or SDcard filesystem supporting CFE_PSP_NONVOL_STARTUP_FILE.
-    //
-    // FIXED filesystem:
-    // - OS_FileSysAddFixedMap()
-    //   calls OS_FileSysStartVolume_Impl(), no format, then
-    //   calls OS_FileSysMountVolume_Impl()
-    // RAM/VIRTUAL filesystem:
-    // - OS_initfs()/OS_mkfs()/OS_FileSys_Initialize()
-    //   calls OS_FileSysStartVolume_Impl() and OS_FileSysFormatVolume_Impl() only
-    // - Requires explicit call to OS_mount()
-    //
-    // Volatile filesystem is initialized/formatted from within cFE ES using device name /ramdev0. It is done using
-    // OS_initfs() or OS_mkfs(), and then OS_mount("/ramdev0", CFE_PLATFORM_ES_RAM_DISK_MOUNT_STRING).
-    // OS_mount() does not operate on filesystems marked as FIXED
-    // OS_initfs() and OS_mkfs() operates on filesystems not marked as FIXED
-    // OS_initfs() or OS_mkfs() are precondition to OS_mount().
-    // If successful, OS_mount() marks the filesys as mounted and VIRTUAL.
-    // Linkage from device to filesystem is done by OS_FileSysMountVolume_Impl()
-    // Both OS_initfs() and OS_mkfs() rely on OS_FileSys_Initialize(), the difference
-    // being only that init should not format if init failed, while OS_mkfs() should format on failure to init.
-    // OS_FileSys_Initialize() relies on OS_FileSysStartVolume_Impl() and, on fail to start and should format,
-    // calls OS_FileSysFormatVolume_Impl()
-
-    /*
-    ** Set up a small RAM filesystem with cFE start-up script content initialized
-    ** from embedded file. See also <cpuname>_EMBED_FILELIST in targets.cmake.
-    */
-
     #ifdef OS_FILESYSTEM_NON_VOLATILE_IS_FATFS
 
     Status = OS_FileSysAddFixedMap(&fs_id, "0:/cf", "/cf");
@@ -144,6 +107,10 @@ void OS_Application_Startup(void)
 
     #else
 
+    /*
+    ** Set up a small RAM filesystem with cFE start-up script content initialized
+    ** from embedded file. See also <cpuname>_EMBED_FILELIST in targets.cmake.
+    */
     osal_id_t FileStartupScript;
     extern const unsigned char STARTUP_SCR_DATA[];          // Embedded by <cpuname>_EMBED_FILELIST in targets.cmake
     extern const unsigned long STARTUP_SCR_SIZE;
@@ -195,11 +162,9 @@ void OS_Application_Startup(void)
 
     #endif
 
-   /*
-   ** Initialize the statically linked modules (if any)
-   */
-
-
+    /*
+    ** Initialize the statically linked modules (if any)
+    */
     CFE_PSP_ModuleInit();
 
     if (CFE_PSP_Setup() != CFE_PSP_SUCCESS)
@@ -209,25 +174,25 @@ void OS_Application_Startup(void)
 
     reset_type = HLP_uGetResetType();
 
-    if (hlp_reset_type == RESET_TYPE_POWERON)
+    if (bsp_reset_type == HLP_RESET_TYPE_POWERON)
     {
         OS_printf("CFE_PSP: POWERON Reset: Power Cycle.\n");
         reset_type    = CFE_PSP_RST_TYPE_POWERON;
         reset_subtype = CFE_PSP_RST_SUBTYPE_POWER_CYCLE;
     }
-    else if (hlp_reset_type == RESET_TYPE_EXTERNAL)
+    else if (bsp_reset_type == HLP_RESET_TYPE_EXTERNAL)
     {
         OS_printf("CFE_PSP POWERON Reset: Fabric (Push button) reset.\n");
         reset_type    = CFE_PSP_RST_TYPE_POWERON;
         reset_subtype = CFE_PSP_RST_SUBTYPE_PUSH_BUTTON;
     }
-    else if (hlp_reset_type == RESET_TYPE_WATCHDOG)
+    else if (bsp_reset_type == HLP_RESET_TYPE_WATCHDOG)
     {
         OS_printf("CFE_PSP PROCESSOR Reset: Watchdog reset.\n");
         reset_type    = CFE_PSP_RST_TYPE_PROCESSOR;
         reset_subtype = CFE_PSP_RST_SUBTYPE_HW_WATCHDOG;
     }
-    else if (hlp_reset_type == RESET_TYPE_SOFTWARE)
+    else if (bsp_reset_type == HLP_RESET_TYPE_SOFTWARE)
     {
         OS_printf("CFE_PSP PROCESSOR Reset: Software Reset.\n");
         reset_type    = CFE_PSP_RST_TYPE_PROCESSOR;
