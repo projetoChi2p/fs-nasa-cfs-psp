@@ -6,9 +6,6 @@
 **   The functions here allow the cFE to interface functions that are board and OS specific
 **   and usually don't fit well in the OS abstraction layer.
 **
-** History:
-**   2025/09/16  Franca. Luís    | luis.franca@inf.ufrgs.br
-**
 *************************************************************************************************/
 
 #include "cfe_psp.h"
@@ -81,7 +78,5 @@ uint32 CFE_PSP_WatchdogGet(void)
  *-----------------------------------------------------------------*/
 void CFE_PSP_WatchdogSet(uint32 WatchdogValue)
 {
-    (void)WatchdogValue;
-
     OS_printf("CFE_PSP_WatchdogSet invoked.\n");
 }
