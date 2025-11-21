@@ -18,7 +18,7 @@
 #define FREERTOS_SYSMON_AGGR_CPULOAD_SUBCH 0
 #define FREERTOS_SYSMON_SAMPLE_DELAY       1000
 #define FREERTOS_SYSMON_MAX_CPUS           1
-#define FREERTOS_SYSMON_STACK_SIZE         2048
+#define FREERTOS_SYSMON_STACK_SIZE         4096
 #define FREERTOS_SYSMON_TASK_PRIORITY     ( tskIDLE_PRIORITY + 5 )
 #define FREERTOS_SYSMON_MAX_SCALE          100
 #define FREERTOS_SYSMON_TASK_NAME          "freertos_sysmon"
@@ -32,6 +32,7 @@ typedef struct freertos_sysmon_cpuload_core
     TickType_t last_run_time;
     TickType_t idle_last_uptime;
     CFE_PSP_IODriver_AdcCode_t avg_load;
+
 } freertos_sysmon_cpuload_core_t;
 
 /* This driver was made with use in a FreeRTOS single core. In case of
@@ -46,12 +47,14 @@ typedef struct freertos_sysmon_cpuload_state
 
     /* Driver only supported for single core. */
     freertos_sysmon_cpuload_core_t core;
+
 } freertos_sysmon_cpuload_state_t;
 
 typedef struct freertos_sysmon_state
 {
     uint32_t                        local_module_id;
     freertos_sysmon_cpuload_state_t cpu_load;
+
 } freertos_sysmon_state_t;
 
 /********************************************************************
