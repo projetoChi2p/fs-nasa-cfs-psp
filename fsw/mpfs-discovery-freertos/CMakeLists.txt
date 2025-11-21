@@ -17,16 +17,16 @@ message("*** Using CMAKE_CURRENT_SOURCE_DIR '${CMAKE_CURRENT_SOURCE_DIR}'.")
 
 add_library(psp-${CFE_PSP_TARGETNAME}-impl OBJECT
     ../shared-freertos/src/cfe_psp_memory.c
-    ../shared-freertos/src/cfe_psp_start.c
     ../shared-freertos/src/cfe_psp_timer.c
     ../shared-freertos/vendor/cfe_psp_console.c
     ../shared-freertos/vendor/cfe_psp_memory.c
     ../shared-freertos/vendor/cfe_psp_memtab.c
     ../shared-freertos/todo/cfe_psp_exception.c
     ../shared-freertos/todo/cfe_psp_memory.c
-    ../shared-freertos/todo/cfe_psp_support.c
     ../shared-freertos/todo/cfe_psp_timer.c
     src/cfe_psp_watchdog.c
+    src/cfe_psp_start.c
+    src/cfe_psp_support.c
 )
 
 target_compile_definitions(psp-${CFE_SYSTEM_PSPNAME}-impl PRIVATE

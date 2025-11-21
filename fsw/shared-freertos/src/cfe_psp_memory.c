@@ -55,7 +55,7 @@ int32 CFE_PSP_InitProcessorReservedMemory(uint32 RestartType)
      * Newly-created segments should already be zeroed out,
      * but this ensures it.
      */
-    if (RestartType != CFE_PSP_RST_TYPE_PROCESSOR)
+    if (RestartType == CFE_PSP_RST_TYPE_POWERON)
     {
         //clean all except ram disk
         OS_printf("CFE_PSP: Clearing out CFE CDS Shared memory segment.\n");

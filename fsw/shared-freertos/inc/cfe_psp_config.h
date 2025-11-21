@@ -62,7 +62,7 @@ typedef struct
 */
 // @FIXME needs to be implemented with cfe_psp_watchdog.c
 #define CFE_PSP_WATCHDOG_MIN 0  // millieconds
-#define CFE_PSP_WATCHDOG_MAX 0xFFFFFFFF  // milliseconds
+#define CFE_PSP_WATCHDOG_MAX 0xFFFFF0  // milliseconds
 
 /*
 ** Number of EEPROM banks on this platform
