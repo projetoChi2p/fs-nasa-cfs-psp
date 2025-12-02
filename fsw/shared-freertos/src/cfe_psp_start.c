@@ -172,43 +172,8 @@ void OS_Application_Startup(void)
         CFE_PSP_Panic(CFE_PSP_ERROR);
     }
 
-    reset_type = HLP_uGetResetType();
-
-    if (bsp_reset_type == HLP_RESET_TYPE_POWERON)
-    {
-        OS_printf("CFE_PSP: POWERON Reset: Power Cycle.\n");
-        reset_type    = CFE_PSP_RST_TYPE_POWERON;
-        reset_subtype = CFE_PSP_RST_SUBTYPE_POWER_CYCLE;
-    }
-    else if (bsp_reset_type == HLP_RESET_TYPE_EXTERNAL)
-    {
-        OS_printf("CFE_PSP POWERON Reset: Fabric (Push button) reset.\n");
-        reset_type    = CFE_PSP_RST_TYPE_POWERON;
-        reset_subtype = CFE_PSP_RST_SUBTYPE_PUSH_BUTTON;
-    }
-    else if (bsp_reset_type == HLP_RESET_TYPE_WATCHDOG)
-    {
-        OS_printf("CFE_PSP PROCESSOR Reset: Watchdog reset.\n");
-        reset_type    = CFE_PSP_RST_TYPE_PROCESSOR;
-        reset_subtype = CFE_PSP_RST_SUBTYPE_HW_WATCHDOG;
-    }
-    else if (bsp_reset_type == HLP_RESET_TYPE_SOFTWARE)
-    {
-        OS_printf("CFE_PSP PROCESSOR Reset: Software Reset.\n");
-        reset_type    = CFE_PSP_RST_TYPE_PROCESSOR;
-        reset_subtype = CFE_PSP_RST_SUBTYPE_RESET_COMMAND;
-    }
-    else
-    {
-        OS_printf("CFE_PSP POWERON Reset: Undefined Reset.\n");
-        reset_type    = CFE_PSP_RST_TYPE_POWERON;
-        reset_subtype = CFE_PSP_RST_SUBTYPE_UNDEFINED_RESET;
-    }
-
-    if (reset_type == CFE_PSP_RST_TYPE_PROCESSOR)
-    {
-        CFE_PSP_ReservedMemoryMap.BootPtr->bsp_reset_type = CFE_PSP_RST_TYPE_POWERON;
-    }
+    reset_type = CFE_PSP_RST_TYPE_POWERON;
+    reset_subtype = CFE_PSP_RST_SUBTYPE_POWER_CYCLE;
 
     /*
     ** Initialize the reserved memory

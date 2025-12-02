@@ -26,7 +26,7 @@ add_library(psp-${CFE_PSP_TARGETNAME}-impl OBJECT
     ../shared-freertos/todo/cfe_psp_memory.c
     ../shared-freertos/todo/cfe_psp_support.c
     ../shared-freertos/todo/cfe_psp_timer.c
-    src/cfe_psp_watchdog-stubs.c
+    src/cfe_psp_watchdog.c
 )
 
 target_compile_definitions(psp-${CFE_SYSTEM_PSPNAME}-impl PRIVATE

@@ -9,8 +9,12 @@
 *************************************************************************************************/
 
 #include "cfe_psp.h"
+#include "cfe_psp_config.h"
 
-uint32 CFE_PSP_WatchdogValue;
+/*
+** The watcdog time in milliseconds.
+*/
+uint32 CFE_PSP_WatchdogValue = CFE_PSP_WATCHDOG_MAX;
 
 /*----------------------------------------------------------------
  *
@@ -20,7 +24,12 @@ uint32 CFE_PSP_WatchdogValue;
  *-----------------------------------------------------------------*/
 void CFE_PSP_WatchdogInit(void)
 {
-    OS_printf("CFE_PSP_WachdogInit invoked.\n");
+    /*
+    ** Just set it to a value right now
+    ** The pc-freertos-linux desktop platform does not actually implement a watchdog
+    ** timeout ( but could with a signal )
+    */
+    CFE_PSP_WatchdogValue = CFE_PSP_WATCHDOG_MAX;
 }
 
 
@@ -30,10 +39,7 @@ void CFE_PSP_WatchdogInit(void)
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-void CFE_PSP_WatchdogEnable(void)
-{
-    OS_printf("CFE_PSP_WatchdogEnable invoked.\n");
-}
+void CFE_PSP_WatchdogEnable(void) { }
 
 /*----------------------------------------------------------------
  *
@@ -41,10 +47,7 @@ void CFE_PSP_WatchdogEnable(void)
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-void CFE_PSP_WatchdogDisable(void)
-{
-    OS_printf("CFE_PSP_WatchdogDiable invoked.\n");
-}
+void CFE_PSP_WatchdogDisable(void) { }
 
 /*----------------------------------------------------------------
  *
@@ -52,10 +55,7 @@ void CFE_PSP_WatchdogDisable(void)
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-void CFE_PSP_WatchdogService(void)
-{
-    OS_printf("CFE_PSP_WatchdogService invoked.\n");
-}
+void CFE_PSP_WatchdogService(void) { }
 
 /*----------------------------------------------------------------
  *
@@ -65,9 +65,7 @@ void CFE_PSP_WatchdogService(void)
  *-----------------------------------------------------------------*/
 uint32 CFE_PSP_WatchdogGet(void)
 {
-    OS_printf("CFE_PSP_WatchdogGet invoked.\n");
-
-    return 100;
+    return CFE_PSP_WatchdogValue;
 }
 
 /*----------------------------------------------------------------
@@ -78,5 +76,5 @@ uint32 CFE_PSP_WatchdogGet(void)
  *-----------------------------------------------------------------*/
 void CFE_PSP_WatchdogSet(uint32 WatchdogValue)
 {
-    OS_printf("CFE_PSP_WatchdogSet invoked.\n");
+    CFE_PSP_WatchdogValue = WatchdogValue;
 }
