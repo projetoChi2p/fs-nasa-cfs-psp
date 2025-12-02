@@ -15,7 +15,6 @@
 #include "target_config.h"
 #include "cfe_mission_cfg.h"
 #include "cfe_platform_cfg.h"
-#include "cfe_es_resetdata_typedef.h"
 
 // target_config.h provides GLOBAL_CONFIGDATA object for CFE runtime settings
 #include <target_config.h>
@@ -35,24 +34,20 @@
 #define CFE_PSP_BOOT_RECORD_SIZE (sizeof(CFE_PSP_ReservedMemoryBootRecord_t))
 #define CFE_PSP_EXCEPTION_RECORD_SIZE (sizeof(CFE_PSP_ExceptionStorage_t))
 
-
 // cfe_psp_memory.h defines this type
-CFE_PSP_ReservedMemoryMap_t CFE_PSP_ReservedMemoryMap = { 0 }; 
+CFE_PSP_ReservedMemoryMap_t CFE_PSP_ReservedMemoryMap = { 0 };
 
 // allocate memory in a special memory region named ".psp_reserved" in linker script
 // @FIXME determine whether to place CDS, other regions in NVM or other memory
-//__attribute__ ((section(".noinit.psp_reserved")))
-//__attribute__ ((aligned (8)))
+__attribute__ ((section(".noinit.psp_reserved")))
+__attribute__ ((aligned (8)))
 char pspReservedMemoryAlloc[CFE_PSP_RESERVED_MEMORY_SIZE];
 
-
 // zero-initialize certain memory depending on the reset type
-int32 CFE_PSP_InitProcessorReservedMemory(uint32 reset_type)
+int32 CFE_PSP_InitProcessorReservedMemory(uint32 RestartType)
 {
     // @FIXME not implemented yet
     // memory may persist or be zero-initialized depending on linker memory region .psp_reserved
-    OS_printf("CFE_PSP: Reset type %s.\n", 
-       ( reset_type==CFE_PSP_RST_TYPE_POWERON)?"POWERON (Clear all)":"not POWERON (preserve disk, CDS and user reserved memory" );
 
     /*
      * Clear the segments only on a POWER ON reset
@@ -60,8 +55,8 @@ int32 CFE_PSP_InitProcessorReservedMemory(uint32 reset_type)
      * Newly-created segments should already be zeroed out,
      * but this ensures it.
      */
-    if ( reset_type == CFE_PSP_RST_TYPE_POWERON )
-    {  
+    if (RestartType == CFE_PSP_RST_TYPE_POWERON)
+    {
         //clean all except ram disk
         OS_printf("CFE_PSP: Clearing out CFE CDS Shared memory segment.\n");
         memset(CFE_PSP_ReservedMemoryMap.CDSMemory.BlockPtr, 0, CFE_PSP_CDS_SIZE);
@@ -79,10 +74,10 @@ int32 CFE_PSP_InitProcessorReservedMemory(uint32 reset_type)
          * This will attempt to preserve the exception and reset log content.
          */
         /*
-        ** Set the default reset type in case a watchdog reset occurs 
+        ** Set the default reset type in case a watchdog reset occurs
         */
         CFE_PSP_ReservedMemoryMap.BootPtr->bsp_reset_type = CFE_PSP_RST_TYPE_PROCESSOR;
-
+        // CFE_PSP_ReservedMemoryMap.BootPtr->ValidityFlag = CFE_PSP_BOOTRECORD_INVALID;
     }
     else
     {
@@ -106,9 +101,9 @@ int32 CFE_PSP_InitProcessorReservedMemory(uint32 reset_type)
      * If a directed shutdown occurs (via CFE_PSP_Restart) then this
      * is overwritten with the valid value.
      */
-    //CFE_PSP_ReservedMemoryMap.BootPtr->ValidityFlag = CFE_PSP_BOOTRECORD_INVALID;
-    
- 
+
+    // CFE_PSP_ReservedMemoryMap.BootPtr->ValidityFlag = CFE_PSP_BOOTRECORD_INVALID;
+
     return CFE_PSP_SUCCESS;
 }
 
@@ -167,7 +162,7 @@ void CFE_PSP_SetupReservedMemoryMap(void)
         OS_DebugPrintf(1, __func__, __LINE__, "PSP required BootRecordSize memory = %u bytes\n", (unsigned int) BootRecordSize);
         OS_DebugPrintf(1, __func__, __LINE__, "PSP required ExcRecordSize memory = %u bytes\n", (unsigned int) ExcRecordSize);
         OS_DebugPrintf(1, __func__, __LINE__, "PSP required ResetSize/Reset area segment size memory = %u bytes\n", (unsigned int) ResetSize);
-        #if 1
+        #if 0
         {
             CFE_ES_ResetData_t x;
             OS_DebugPrintf(1, __func__, __LINE__, "    required CFE_ES_ResetData_t memory = %u bytes\n", (unsigned int) sizeof(x));
@@ -183,7 +178,7 @@ void CFE_PSP_SetupReservedMemoryMap(void)
         OS_DebugPrintf(1, __func__, __LINE__, "PSP required VolatileDiskSize memory = %u bytes\n", (unsigned int) VolatileDiskSize);
         OS_DebugPrintf(1, __func__, __LINE__, "PSP required CDSSize/CDS segment size memory = %u bytes\n", (unsigned int) CDSSize);
         OS_DebugPrintf(1, __func__, __LINE__, "PSP required UserReservedSize/User reserved area segment size memory = %u bytes\n", (unsigned int) UserReservedSize);
-        
+
         CFE_PSP_Panic(CFE_PSP_PANIC_MEMORY_ALLOC);
         return;
     }
@@ -224,17 +219,17 @@ void CFE_PSP_SetupReservedMemoryMap(void)
 **  These works are licensed under the following terms:
 **
 **      GSC-18128-1, "Core Flight Executive Version 6.7"
-**      
+**
 **      Copyright (c) 2006-2019 United States Government as represented by
 **      the Administrator of the National Aeronautics and Space Administration.
 **      All Rights Reserved.
-**      
+**
 **      Licensed under the Apache License, Version 2.0 (the "License");
 **      you may not use this file except in compliance with the License.
 **      You may obtain a copy of the License at
-**      
+**
 **        http://www.apache.org/licenses/LICENSE-2.0
-**      
+**
 **      Unless required by applicable law or agreed to in writing, software
 **      distributed under the License is distributed on an "AS IS" BASIS,
 **      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.

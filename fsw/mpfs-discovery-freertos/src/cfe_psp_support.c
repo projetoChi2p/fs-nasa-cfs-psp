@@ -45,7 +45,7 @@ const char *CFE_PSP_GetProcessorName(void)
 }
 
 
-void CFE_PSP_Restart(uint32 resetType){
-    // FIXME: treat the reset type
-    HLP_vSystemRestart();
+void CFE_PSP_Restart(uint32 resetType)
+{
+    SYSREG->MSS_RESET_CR = 0xDEAD;
 }

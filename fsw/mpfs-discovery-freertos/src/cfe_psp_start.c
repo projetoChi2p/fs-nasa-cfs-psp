@@ -45,8 +45,7 @@
 
 #include <os-shared-globaldefs.h>
 
-// #include "mpfs_hal/mss_hal.h"
-#include "app_helpers.h"
+#include "mpfs_hal/mss_hal.h"
 
 // PSP needs to call the CFE entry point
 #define CFE_PSP_MAIN_FUNCTION (*GLOBAL_CONFIGDATA.CfeConfig->SystemMain)
@@ -73,7 +72,7 @@ void OS_Application_Startup(void)
     int32     Status;
     uint32    reset_type;
     uint32    reset_subtype;
-    uint32    bsp_reset_type;
+    uint32    reset_register;
     osal_id_t fs_id;
 
     /*
@@ -82,19 +81,17 @@ void OS_Application_Startup(void)
     Status = OS_API_Init();
     if (Status != OS_SUCCESS)
     {
-        /* irrecoverable error if OS_API_Init() fails. */
-        /* note: use printf here, as OS_printf may not work */
+        /* Irrecoverable error if OS_API_Init() fails. */
+        /* note: OS_printf may not work */
         OS_printf("CFE_PSP: OS_API_Init() failure\n");
         CFE_PSP_Panic(Status);
     }
 
     /*
-    ** Setup the pointer to the reserved area in vxWorks.
+    ** Setup the pointer to the reserved area.
     ** This must be done before any of the reset variables are used.
     */
     CFE_PSP_SetupReservedMemoryMap();
-
-    #ifdef OS_FILESYSTEM_NON_VOLATILE_IS_FATFS
 
     Status = OS_FileSysAddFixedMap(&fs_id, "0:/cf", "/cf");
     if (Status != OS_SUCCESS)
@@ -104,63 +101,6 @@ void OS_Application_Startup(void)
         * depending on config. */
         OS_printf("CFE_PSP: OS_FileSysAddFixedMap() failure: %d\n", (int)Status);
     }
-
-    #else
-
-    /*
-    ** Set up a small RAM filesystem with cFE start-up script content initialized
-    ** from embedded file. See also <cpuname>_EMBED_FILELIST in targets.cmake.
-    */
-    osal_id_t FileStartupScript;
-    extern const unsigned char STARTUP_SCR_DATA[];          // Embedded by <cpuname>_EMBED_FILELIST in targets.cmake
-    extern const unsigned long STARTUP_SCR_SIZE;
-    #define FREERTOS_RAMDISK_SECTOR_SIZE 128                // must be 512 for FreeRTOS+FAT RAMDISK
-    #define ES_STARTUP_BLOCKS            26                 // minium 128 for FreeRTOS+FAT RAMDISK
-    #define ES_STARTUP_VOL_LABEL         "RAM1"             // Must start with /RAM if RAMDISK, see also OS_FILESYS_RAMDISK_VOLNAME_PREFIX
-    #define ES_STARTUP_DEVICE            "/ramdev1"
-    #define ES_STARTUP_MOUNT             "/cf"              // Same prefix as CFE_PLATFORM_ES_NONVOL_STARTUP_FILE
-
-    /* Make the file system */
-    Status = OS_mkfs( 0,   // NULL as RAMDISK address implies dynamic allocation
-        ES_STARTUP_DEVICE,
-        ES_STARTUP_VOL_LABEL,
-        OSAL_SIZE_C(FREERTOS_RAMDISK_SECTOR_SIZE),
-        OSAL_BLOCKCOUNT_C(ES_STARTUP_BLOCKS) );
-    if (Status != OS_SUCCESS)
-    {
-        OS_printf("CFE_PSP: OS_mkfs() failed.\n");
-        CFE_PSP_Panic(Status);
-    }
-
-    Status = OS_mount(ES_STARTUP_DEVICE, ES_STARTUP_MOUNT);
-    if (Status != OS_SUCCESS)
-    {
-        OS_printf("CFE_PSP: OS_mount() failed.\n");
-        CFE_PSP_Panic(Status);
-    }
-
-    Status = OS_OpenCreate(&FileStartupScript, CFE_PSP_NONVOL_STARTUP_FILE, OS_FILE_FLAG_CREATE, OS_WRITE_ONLY);
-    if (Status != OS_SUCCESS)
-    {
-        OS_printf("CFE_PSP: OS_OpenCreate() failure\n");
-        CFE_PSP_Panic(Status);
-    }
-
-    Status = OS_write(FileStartupScript, STARTUP_SCR_DATA, STARTUP_SCR_SIZE);
-    if (Status != STARTUP_SCR_SIZE)
-    {
-        OS_printf("CFE_PSP: OS_write() failure\n");
-        CFE_PSP_Panic(Status);
-    }
-
-    Status = OS_close(FileStartupScript);
-    if (Status != OS_SUCCESS)
-    {
-        OS_printf("CFE_PSP: OS_close() failure\n");
-        CFE_PSP_Panic(Status);
-    }
-
-    #endif
 
     /*
     ** Initialize the statically linked modules (if any)
@@ -172,8 +112,49 @@ void OS_Application_Startup(void)
         CFE_PSP_Panic(CFE_PSP_ERROR);
     }
 
-    reset_type = CFE_PSP_RST_TYPE_POWERON;
-    reset_subtype = CFE_PSP_RST_SUBTYPE_POWER_CYCLE;
+    /* Read the Reset Status Register.
+     * After a reset occurs, the register should be read and then zero written
+     * to allow the next reset event to be correctly captured.
+     */
+    reset_register = SYSREG->RESET_SR;
+    SYSREG->RESET_SR = 0;
+
+    if (reset_register == 0x1ff)
+    {
+        OS_printf("CFE_PSP: POWERON RESET: Power Up\n");
+        reset_type    = CFE_PSP_RST_TYPE_POWERON;
+        reset_subtype = CFE_PSP_RST_SUBTYPE_POWER_CYCLE;
+    }
+    else if (reset_register & RESET_SR_CPU_SOFTCB_BUS_RESET_MASK)
+    {
+        OS_printf("CFE_PSP: PROCESSOR Reset: CPU Warm Reset\n");
+        reset_type    = CFE_PSP_RST_TYPE_POWERON;
+        reset_subtype = CFE_PSP_RST_SUBTYPE_RESET_COMMAND;
+    }
+    else if (reset_register & RESET_SR_DEBUGER_RESET_MASK)
+    {
+        OS_printf("CFE_PSP: POWERON Reset: Debugger Reset.\n");
+        reset_type    = CFE_PSP_RST_TYPE_POWERON;
+        reset_subtype = CFE_PSP_RST_SUBTYPE_HWDEBUG_RESET;
+    }
+    else if (reset_register & RESET_SR_WDOG_RESET_MASK)
+    {
+        OS_printf("CFE_PSP: PROCESSOR Reset: Watchdog Reset.\n");
+        reset_type    = CFE_PSP_RST_TYPE_POWERON;
+        reset_subtype = CFE_PSP_RST_SUBTYPE_HW_WATCHDOG;
+    }
+    else if (reset_register & RESET_SR_FABRIC_RESET_MASK)
+    {
+        OS_printf("CFE_PSP: PROCESSOR Reset: Push Button Reset.\n");
+        reset_type    = CFE_PSP_RST_TYPE_PROCESSOR;
+        reset_subtype = CFE_PSP_RST_SUBTYPE_PUSH_BUTTON;
+    }
+    else
+    {
+        OS_printf("CFE_PSP: UNDEFINED Reset. Reset Register: %x\n", reset_register);
+        reset_type    = CFE_PSP_RST_TYPE_POWERON;
+        reset_subtype = CFE_PSP_RST_SUBTYPE_UNDEFINED_RESET;
+    }
 
     /*
     ** Initialize the reserved memory

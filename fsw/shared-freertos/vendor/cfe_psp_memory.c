@@ -75,7 +75,7 @@
 int32 CFE_PSP_GetCDSSize(uint32 *SizeOfCDS)
 {
    int32 return_code;
-   
+
    if ( SizeOfCDS == NULL )
    {
        return_code = OS_ERROR;
@@ -104,7 +104,7 @@ int32 CFE_PSP_WriteToCDS(const void *PtrToDataToWrite, uint32 CDSOffset, uint32 
 {
    uint8 *CopyPtr;
    int32  return_code;
-         
+
    if ( PtrToDataToWrite == NULL )
    {
        return_code = OS_ERROR;
@@ -117,16 +117,16 @@ int32 CFE_PSP_WriteToCDS(const void *PtrToDataToWrite, uint32 CDSOffset, uint32 
            CopyPtr = CFE_PSP_ReservedMemoryMap.CDSMemory.BlockPtr;
            CopyPtr += CDSOffset;
            memcpy((char *)CopyPtr, (char *)PtrToDataToWrite,NumBytes);
-          
+
            return_code = OS_SUCCESS;
        }
        else
        {
           return_code = OS_ERROR;
        }
-       
+
    } /* end if PtrToDataToWrite == NULL */
-   
+
    return(return_code);
 }
 
@@ -148,7 +148,7 @@ int32 CFE_PSP_ReadFromCDS(void *PtrToDataToRead, uint32 CDSOffset, uint32 NumByt
 {
    uint8 *CopyPtr;
    int32  return_code;
-      
+
    if ( PtrToDataToRead == NULL )
    {
        return_code = OS_ERROR;
@@ -161,18 +161,17 @@ int32 CFE_PSP_ReadFromCDS(void *PtrToDataToRead, uint32 CDSOffset, uint32 NumByt
            CopyPtr = CFE_PSP_ReservedMemoryMap.CDSMemory.BlockPtr;
            CopyPtr += CDSOffset;
            memcpy((char *)PtrToDataToRead, (char *)CopyPtr, NumBytes);
-          
+
            return_code = OS_SUCCESS;
        }
        else
        {
           return_code = OS_ERROR;
        }
-       
+
    } /* end if PtrToDataToWrite == NULL */
-   
+
    return(return_code);
-   
 }
 
 /*
@@ -198,7 +197,7 @@ int32 CFE_PSP_ReadFromCDS(void *PtrToDataToRead, uint32 CDSOffset, uint32 NumByt
 int32 CFE_PSP_GetResetArea (cpuaddr *PtrToResetArea, uint32 *SizeOfResetArea)
 {
    int32   return_code;
-   
+
    if ( SizeOfResetArea == NULL || PtrToResetArea == NULL )
    {
       return_code = OS_ERROR;
@@ -209,7 +208,7 @@ int32 CFE_PSP_GetResetArea (cpuaddr *PtrToResetArea, uint32 *SizeOfResetArea)
       *SizeOfResetArea = CFE_PSP_ReservedMemoryMap.ResetMemory.BlockSize;
       return_code = OS_SUCCESS;
    }
-   
+
    return(return_code);
 }
 
@@ -235,7 +234,7 @@ int32 CFE_PSP_GetResetArea (cpuaddr *PtrToResetArea, uint32 *SizeOfResetArea)
 int32 CFE_PSP_GetUserReservedArea(cpuaddr *PtrToUserArea, uint32 *SizeOfUserArea )
 {
    int32   return_code;
-   
+
    if ( SizeOfUserArea == NULL || PtrToUserArea == NULL )
    {
       return_code = OS_ERROR;
@@ -246,7 +245,7 @@ int32 CFE_PSP_GetUserReservedArea(cpuaddr *PtrToUserArea, uint32 *SizeOfUserArea
       *SizeOfUserArea = CFE_PSP_ReservedMemoryMap.UserReservedMemory.BlockSize;
       return_code = OS_SUCCESS;
    }
-   
+
    return(return_code);
 }
 
@@ -272,7 +271,7 @@ int32 CFE_PSP_GetUserReservedArea(cpuaddr *PtrToUserArea, uint32 *SizeOfUserArea
 int32 CFE_PSP_GetVolatileDiskMem(cpuaddr *PtrToVolDisk, uint32 *SizeOfVolDisk )
 {
    int32   return_code;
-   
+
    if ( SizeOfVolDisk == NULL || PtrToVolDisk == NULL )
    {
       return_code = OS_ERROR;
@@ -282,9 +281,8 @@ int32 CFE_PSP_GetVolatileDiskMem(cpuaddr *PtrToVolDisk, uint32 *SizeOfVolDisk )
       *PtrToVolDisk = (cpuaddr)(CFE_PSP_ReservedMemoryMap.VolatileDiskMemory.BlockPtr);
       *SizeOfVolDisk = CFE_PSP_ReservedMemoryMap.VolatileDiskMemory.BlockSize;
       return_code = OS_SUCCESS;
-
    }
-   
+
    return(return_code);
-   
+
 }

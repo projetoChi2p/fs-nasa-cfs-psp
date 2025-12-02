@@ -11,3 +11,4 @@ eeprom_notimpl
 ram_notimpl
 port_notimpl
 iodriver
+freertos_sysmon

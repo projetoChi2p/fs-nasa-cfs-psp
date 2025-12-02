@@ -1,0 +1,3 @@
+
+add_psp_module(freertos_sysmon freertos_sysmon.c)
+target_include_directories(freertos_sysmon PRIVATE $<TARGET_PROPERTY:iodriver,INTERFACE_INCLUDE_DIRECTORIES>)
