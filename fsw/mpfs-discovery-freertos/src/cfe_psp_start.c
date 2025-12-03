@@ -135,7 +135,7 @@ void OS_Application_Startup(void)
     {
         OS_printf("CFE_PSP: POWERON Reset: Debugger Reset.\n");
         reset_type    = CFE_PSP_RST_TYPE_POWERON;
-        reset_subtype = CFE_PSP_RST_SUBTYPE_HWDEBUG_RESET;
+        reset_subtype = CFE_PSP_RST_SUBTYPE_POWER_CYCLE;
     }
     else if (reset_register & RESET_SR_WDOG_RESET_MASK)
     {
