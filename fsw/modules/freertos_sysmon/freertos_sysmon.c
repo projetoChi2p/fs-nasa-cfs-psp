@@ -23,6 +23,10 @@
 #define FREERTOS_SYSMON_MAX_SCALE          100
 #define FREERTOS_SYSMON_TASK_NAME          "freertos_sysmon"
 
+#ifndef UNUSED_ARGUMENT
+#define UNUSED_ARGUMENT(x) (void)(x)
+#endif
+
 
 /********************************************************************
  * Local Type Definitions
@@ -149,8 +153,10 @@ void freertos_sysmon_update_state(freertos_sysmon_cpuload_state_t *state)
     core->last_run_time    = current_uptime;
 }
 
-void freertos_sysmon_Task()
+void freertos_sysmon_Task(void *pvParameters)
 {
+    UNUSED_ARGUMENT(pvParameters);
+
     freertos_sysmon_cpuload_state_t* state = &freertos_sysmon_global.cpu_load;
 
     while (state->should_run)

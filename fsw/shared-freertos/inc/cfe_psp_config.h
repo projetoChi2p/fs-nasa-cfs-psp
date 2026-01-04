@@ -61,7 +61,7 @@ typedef struct
 ** Watchdog minimum and maximum values ( in milliseconds )
 */
 // @FIXME needs to be implemented with cfe_psp_watchdog.c
-#define CFE_PSP_WATCHDOG_MIN 0  // millieconds
+#define CFE_PSP_WATCHDOG_MIN 0         // milliseconds
 #define CFE_PSP_WATCHDOG_MAX 0xFFFFF0  // milliseconds
 
 /*

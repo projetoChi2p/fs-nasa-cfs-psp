@@ -45,7 +45,6 @@
 
 #include <os-shared-globaldefs.h>
 
-// #include "mpfs_hal/mss_hal.h"
 #include "app_helpers.h"
 
 // PSP needs to call the CFE entry point
@@ -82,14 +81,14 @@ void OS_Application_Startup(void)
     Status = OS_API_Init();
     if (Status != OS_SUCCESS)
     {
-        /* irrecoverable error if OS_API_Init() fails. */
-        /* note: use printf here, as OS_printf may not work */
+        /* Unrecoverable error if OS_API_Init() fails. */
+        /* note: OS_printf may not work */
         OS_printf("CFE_PSP: OS_API_Init() failure\n");
         CFE_PSP_Panic(Status);
     }
 
     /*
-    ** Setup the pointer to the reserved area in vxWorks.
+    ** Setup the pointer to the reserved area.
     ** This must be done before any of the reset variables are used.
     */
     CFE_PSP_SetupReservedMemoryMap();
@@ -172,8 +171,49 @@ void OS_Application_Startup(void)
         CFE_PSP_Panic(CFE_PSP_ERROR);
     }
 
-    reset_type = CFE_PSP_RST_TYPE_POWERON;
-    reset_subtype = CFE_PSP_RST_SUBTYPE_POWER_CYCLE;
+    /* Read the Reset Status Register.
+     * After a reset occurs, the register should be read and 
+     * then zero written to allow the next reset event to be 
+     * correctly captured.
+     */
+    /* TODO We shall distinguish between a warm-reset triggered
+     *      by FDIR or scheduled action, and a warm-reset
+     *      commanded from ground station, especially if ground
+     *      station intent was to force a cold-reset.
+     */
+    bsp_reset_type = HLP_uGetResetType();
+    switch (bsp_reset_type) {
+        case HLP_RESET_TYPE_POWERON:
+            OS_printf("CFE_PSP: POWERON RESET: Power Up\n");
+            reset_type    = CFE_PSP_RST_TYPE_POWERON;
+            reset_subtype = CFE_PSP_RST_SUBTYPE_POWER_CYCLE;
+            break;
+        case HLP_RESET_TYPE_WATCHDOG:
+            OS_printf("CFE_PSP: PROCESSOR Reset: Watchdog Reset.\n");
+            reset_type    = CFE_PSP_RST_TYPE_PROCESSOR;
+            reset_subtype = CFE_PSP_RST_SUBTYPE_HW_WATCHDOG;
+            break;
+        case HLP_RESET_TYPE_SOFTWARE:
+            OS_printf("CFE_PSP: PROCESSOR Reset: CPU Warm Reset\n");
+            reset_type    = CFE_PSP_RST_TYPE_PROCESSOR;
+            reset_subtype = CFE_PSP_RST_SUBTYPE_RESET_COMMAND;
+            break;
+        case HLP_RESET_TYPE_EXTERNAL:
+            OS_printf("CFE_PSP: PROCESSOR Reset: Push Button Reset.\n");
+            reset_type    = CFE_PSP_RST_TYPE_POWERON;
+            reset_subtype = CFE_PSP_RST_SUBTYPE_PUSH_BUTTON;
+            break;
+        case HLP_RESET_TYPE_DEBUG:
+            OS_printf("CFE_PSP: POWERON Reset: Debugger Reset.\n");
+            reset_type    = CFE_PSP_RST_TYPE_POWERON;
+            reset_subtype = CFE_PSP_RST_SUBTYPE_POWER_CYCLE;
+            break;
+        default:
+            OS_printf("CFE_PSP: UNDEFINED Reset. Reset Register: %x\n", bsp_reset_type);
+            reset_type    = CFE_PSP_RST_TYPE_POWERON;
+            reset_subtype = CFE_PSP_RST_SUBTYPE_UNDEFINED_RESET;
+            break;
+    }
 
     /*
     ** Initialize the reserved memory
