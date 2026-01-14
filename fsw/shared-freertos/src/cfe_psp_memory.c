@@ -46,9 +46,6 @@ char pspReservedMemoryAlloc[CFE_PSP_RESERVED_MEMORY_SIZE];
 // zero-initialize certain memory depending on the reset type
 int32 CFE_PSP_InitProcessorReservedMemory(uint32 RestartType)
 {
-    // @FIXME not implemented yet
-    // memory may persist or be zero-initialized depending on linker memory region .psp_reserved
-
     /*
      * Clear the segments only on a POWER ON reset
      *
@@ -86,7 +83,7 @@ int32 CFE_PSP_InitProcessorReservedMemory(uint32 RestartType)
          * If an unclean shutdown occurs after a PROCESSOR reset, then next time should
          * be a POWERON reset.
          */
-        CFE_PSP_ReservedMemoryMap.BootPtr->bsp_reset_type = CFE_PSP_RST_TYPE_PROCESSOR;
+        CFE_PSP_ReservedMemoryMap.BootPtr->bsp_reset_type = CFE_PSP_RST_TYPE_POWERON;
     }
 
     /*

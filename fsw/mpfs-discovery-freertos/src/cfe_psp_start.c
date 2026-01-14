@@ -127,9 +127,23 @@ void OS_Application_Startup(void)
     }
     else if (reset_register & RESET_SR_CPU_SOFTCB_BUS_RESET_MASK)
     {
-        OS_printf("CFE_PSP: PROCESSOR Reset: CPU Warm Reset\n");
-        reset_type    = CFE_PSP_RST_TYPE_POWERON;
-        reset_subtype = CFE_PSP_RST_SUBTYPE_RESET_COMMAND;
+        /*
+        ** For a Software hard reset, we want to look at the special
+        ** BSP reset variable to determine if we wanted a
+        ** Power ON or a Processor reset.
+        */
+        if (CFE_PSP_ReservedMemoryMap.BootPtr->bsp_reset_type == CFE_PSP_RST_TYPE_POWERON)
+        {
+            OS_printf("CFE_PSP: POWERON Reset: Software Hard Reset.\n");
+            reset_type    = CFE_PSP_RST_TYPE_POWERON;
+            reset_subtype = CFE_PSP_RST_SUBTYPE_RESET_COMMAND;
+        }
+        else
+        {
+            OS_printf("CFE_PSP: PROCESSOR Reset: Software Hard Reset.\n");
+            reset_type    = CFE_PSP_RST_TYPE_PROCESSOR;
+            reset_subtype = CFE_PSP_RST_SUBTYPE_RESET_COMMAND;
+        }
     }
     else if (reset_register & RESET_SR_DEBUGER_RESET_MASK)
     {
@@ -140,7 +154,7 @@ void OS_Application_Startup(void)
     else if (reset_register & RESET_SR_WDOG_RESET_MASK)
     {
         OS_printf("CFE_PSP: PROCESSOR Reset: Watchdog Reset.\n");
-        reset_type    = CFE_PSP_RST_TYPE_POWERON;
+        reset_type    = CFE_PSP_RST_TYPE_PROCESSOR;
         reset_subtype = CFE_PSP_RST_SUBTYPE_HW_WATCHDOG;
     }
     else if (reset_register & RESET_SR_FABRIC_RESET_MASK)

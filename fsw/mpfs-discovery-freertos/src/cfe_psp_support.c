@@ -47,5 +47,14 @@ const char *CFE_PSP_GetProcessorName(void)
 
 void CFE_PSP_Restart(uint32 resetType)
 {
-    SYSREG->MSS_RESET_CR = 0xDEAD;
+    if (resetType == CFE_PSP_RST_TYPE_POWERON)
+    {
+        CFE_PSP_ReservedMemoryMap.BootPtr->bsp_reset_type = CFE_PSP_RST_TYPE_POWERON;
+        SYSREG->MSS_RESET_CR = 0xDEAD;
+    }
+    else
+    {
+        CFE_PSP_ReservedMemoryMap.BootPtr->bsp_reset_type = CFE_PSP_RST_TYPE_POWERON;
+        SYSREG->MSS_RESET_CR = 0xDEAD;
+    }
 }
