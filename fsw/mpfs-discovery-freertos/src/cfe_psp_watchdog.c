@@ -68,7 +68,7 @@ void CFE_PSP_WatchdogEnable(void)
 
     /* Get current watchdog configuration */
     MSS_WD_get_config(MSS_WDOG0_LO, &WatchdogConfig);
-    
+
     /* Enable watchdog interrupt */
     __enable_local_irq((int8_t)WDOG0_TOUT_E51_INT);
 

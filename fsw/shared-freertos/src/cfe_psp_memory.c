@@ -74,7 +74,6 @@ int32 CFE_PSP_InitProcessorReservedMemory(uint32 RestartType)
         ** Set the default reset type in case a watchdog reset occurs
         */
         CFE_PSP_ReservedMemoryMap.BootPtr->bsp_reset_type = CFE_PSP_RST_TYPE_PROCESSOR;
-        // CFE_PSP_ReservedMemoryMap.BootPtr->ValidityFlag = CFE_PSP_BOOTRECORD_INVALID;
     }
     else
     {
@@ -85,21 +84,6 @@ int32 CFE_PSP_InitProcessorReservedMemory(uint32 RestartType)
          */
         CFE_PSP_ReservedMemoryMap.BootPtr->bsp_reset_type = CFE_PSP_RST_TYPE_POWERON;
     }
-
-    /*
-     * Reset the boot record validity flag (always).
-     *
-     * If an unclean shutdown occurs, such as a software crash or abort, this
-     * will remain in the shm structure and it can be detected at startup.
-     *
-     * This can be used to differentiate between an intentional and unintentional
-     * processor reset.
-     *
-     * If a directed shutdown occurs (via CFE_PSP_Restart) then this
-     * is overwritten with the valid value.
-     */
-
-    // CFE_PSP_ReservedMemoryMap.BootPtr->ValidityFlag = CFE_PSP_BOOTRECORD_INVALID;
 
     return CFE_PSP_SUCCESS;
 }
