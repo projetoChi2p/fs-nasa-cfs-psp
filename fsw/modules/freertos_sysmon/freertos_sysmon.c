@@ -18,7 +18,7 @@
 #define FREERTOS_SYSMON_AGGR_CPULOAD_SUBCH 0
 #define FREERTOS_SYSMON_SAMPLE_DELAY       1000
 #define FREERTOS_SYSMON_MAX_CPUS           1
-#define FREERTOS_SYSMON_STACK_SIZE         4096
+#define FREERTOS_SYSMON_STACK_SIZE         2048
 #define FREERTOS_SYSMON_TASK_PRIORITY     ( tskIDLE_PRIORITY + 5 )
 #define FREERTOS_SYSMON_MAX_SCALE          100
 #define FREERTOS_SYSMON_TASK_NAME          "freertos_sysmon"
@@ -377,6 +377,7 @@ int32_t freertos_sysmon_cpu_load_dispatch(uint32_t CommandCode, uint16_t Subchan
             {
                 StatusCode = CFE_PSP_ERROR;
             }
+            break;
         }
         default:
             break;
